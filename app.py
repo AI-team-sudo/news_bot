@@ -34,6 +34,12 @@ def translate_to_gujarati(text):
         st.error(f"Translation error: {e}")
     return text
 
+def translate_content(text):
+    try:
+        return GoogleTranslator(source='en', target='gu').translate(text)
+    except Exception as e:
+        return f"Translation error: {e}"
+
 def get_embedding(text):
     response = client.embeddings.create(input=text, model="text-embedding-ada-002")
     return response.data[0].embedding
@@ -52,8 +58,10 @@ def search_news(query):
     vector_results = index.query(vector=query_embedding, top_k=5, include_metadata=True)
     return vector_results["matches"], cleaned_query, translated_query
 
+# Page configuration
 st.set_page_config(page_title="Gujarati News Bot", page_icon="📰", layout="centered")
 
+# Custom CSS
 st.markdown(
     """
     <style>
@@ -96,18 +104,49 @@ st.markdown(
             text-decoration: none;
             border-radius: 5px;
             font-size: 14px;
+            margin-right: 10px;
         }
         .read-more-button:hover {
             background-color: #000000;
+        }
+        .translate-button {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #2196F3;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .translate-button:hover {
+            background-color: #1976D2;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .translated-content {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #4CAF50;
         }
     </style>
     """,
     unsafe_allow_html=True
 )
 
+# App header
 st.markdown("<h1 style='text-align: center;'>📰 Gujarati News Bot</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center;'>Enter your query in English or Gujarati and get the latest news instantly.</p>", unsafe_allow_html=True)
 
+# Initialize session state for translation toggles
+if 'translation_states' not in st.session_state:
+    st.session_state.translation_states = {}
+
+# Search input
 user_query = st.text_input("🔎 Enter your query (English or Gujarati):")
 if st.button("Search News"):
     if user_query:
@@ -120,18 +159,42 @@ if st.button("Search News"):
             st.markdown(f"**🌐 Gujarati Translation:** `{translated_query}` 🇮🇳")
 
         if results:
-            for news in results:
+            for idx, news in enumerate(results):
                 metadata = news["metadata"]
                 highlighted_title = highlight_keywords(metadata["title"], translated_query)
                 highlighted_content = highlight_keywords(metadata["content"], translated_query)
+
+                # Create a unique key for this news item
+                translation_key = f"translate_{idx}"
+                if translation_key not in st.session_state.translation_states:
+                    st.session_state.translation_states[translation_key] = False
 
                 st.markdown(f"""
                 <div class="news-card">
                     <h3>{highlighted_title}</h3>
                     <p><strong>📅 Date:</strong> {metadata['date']}</p>
                     <p>{highlighted_content}</p>
-                    <p><a href="{metadata['link']}" target="_blank" class="read-more-button">🔗 Read More</a></p>
                 </div>
                 """, unsafe_allow_html=True)
+
+                # Button container
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.markdown(f"<a href='{metadata['link']}' target='_blank' class='read-more-button'>🔗 Read More</a>", unsafe_allow_html=True)
+                with col2:
+                    if st.button("🌐 Translate", key=translation_key):
+                        st.session_state.translation_states[translation_key] = not st.session_state.translation_states[translation_key]
+
+                # Show translated content if translation is toggled on
+                if st.session_state.translation_states[translation_key]:
+                    with st.spinner("Translating..."):
+                        translated_content = translate_content(metadata["content"])
+                        st.markdown(f"""
+                        <div class="translated-content">
+                            <h4>ગુજરાતી અનુવાદ:</h4>
+                            <p>{translated_content}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
         else:
             st.warning("⚠️ No news found matching your query.")
