@@ -138,8 +138,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# App header
-st.markdown("<h1 style='text-align: center;'>📰 Gujarati News Bot</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center;'>Enter your query in English or Gujarati and get the latest news instantly.</p>", unsafe_allow_html=True)
 
 # Initialize session state for translation toggles
