@@ -138,6 +138,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown("<h1 style='text-align: center;'>📰 Gujarati News Bot</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center;'>Enter your query in English or Gujarati and get the latest news instantly.</p>", unsafe_allow_html=True)
 
 # Initialize session state for translation toggles
@@ -159,7 +160,6 @@ if st.button("Search News"):
         if results:
             for idx, news in enumerate(results):
                 metadata = news["metadata"]
-                highlighted_title = highlight_keywords(metadata["title"], translated_query)
                 highlighted_content = highlight_keywords(metadata["content"], translated_query)
 
                 # Create a unique key for this news item
@@ -169,7 +169,6 @@ if st.button("Search News"):
 
                 st.markdown(f"""
                 <div class="news-card">
-                    <h3>{highlighted_title}</h3>
                     <p><strong>📅 Date:</strong> {metadata['date']}</p>
                     <p>{highlighted_content}</p>
                 </div>
